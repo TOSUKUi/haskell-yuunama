@@ -1,6 +1,6 @@
 module Main where
 
-import           Brick
+import           Environment
 
 ui :: Widget ()
 ui = str "Hello, world!"
