@@ -1,5 +1,6 @@
 module Environment
     ( dijkstra
+    , dijkstraBFS
     )
 where
 
@@ -70,14 +71,17 @@ dijkstra limit (x, y) candidates rocks distance
 
 
 dijkstraBFS :: Int -> Coord -> [Coord] -> Int -> CoordCost
-dijkstraBFS limit (x, y) rocks maxDistance = 
+dijkstraBFS limit (x, y) rocks maxDistance = snd amap
   where
-    map = go 1 queue M.empty rocks
-    go :: Int -> [Coord] -> CoordCost -> [Coord] -> [Coord]
-    go 0 _ m rocks = traceShow m $ []
+    amap = go 1 [(x, y)] M.empty rocks
+    go :: Int -> [Coord] -> CoordCost -> [Coord] -> ([Coord], CoordCost)
+    go 0 _ m rocks = ([], m)
     go n (q : qs) m rocks
-        | null nqueue = go (n - 1) qs nm (q : rocks)
-        | otherwise   = nqueue ++ (go (n - 1 + length nqueue) qs nm (q : rocks))
+        | null nqueue
+        = go (n - 1) qs nm (q : rocks)
+        | otherwise
+        = let ngo = go (n - 1 + length nqueue) qs nm (q : rocks)
+          in  (nqueue ++ (fst ngo), snd ngo)
         where (nqueue, nm) = next q qs rocks m
 
 
@@ -87,14 +91,15 @@ dijkstraBFS limit (x, y) rocks maxDistance =
 
 -- 探索始点 始点のコスト 既探索ノード+岩の場所 すべての探索コスト集合 -> ([探索候補キュー], [探索コスト集合])
 next :: Coord -> [Coord] -> [Coord] -> CoordCost -> ([Coord], CoordCost)
-next (x, y) q rocks m =
+next (x, y) qs rocks m =
     let nexts =
-                (if elem (x + 1, y) rocks then [(x + 1, y)] else [])
-                    ++ (if elem (x + 1, y) rocks then [(x + 1, y)] else [])
-                    ++ (if elem (x, y + 1) rocks then [(x, y + 1)] else [])
-                    ++ (if elem (x, y - 1) rocks then [(x, y - 1)] else [])
+                (if elem (x + 1, y) rocks then [] else [(x + 1, y)])
+                    ++ (if elem (x + 1, y) rocks then [] else [(x + 1, y)])
+                    ++ (if elem (x, y + 1) rocks then [] else [(x, y + 1)])
+                    ++ (if elem (x, y - 1) rocks then [] else [(x, y - 1)])
         Just cost = M.lookup (x, y) m
-    in  (nexts ++ q, L.foldl' (updateCoordCost (cost + 1)) m nexts)
+    in  traceShow nexts
+            $ (nexts ++ qs, L.foldl' (updateCoordCost (cost + 1)) m nexts)
 
 
 updateCoordCost :: Int -> CoordCost -> Coord -> CoordCost
