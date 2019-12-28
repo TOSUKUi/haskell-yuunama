@@ -12,6 +12,7 @@ type Coord = (Int, Int)
 
 
 type CoordCost = M.Map Coord Int
+type MobDistance = (Mob, Int)
 
 
 data World = Field {
@@ -40,13 +41,21 @@ data Rock = Rock {
 
 
 action :: Mob -> World -> Mob
-action mob world = filter (isEnemy mob) (search world mob 5)
+action mob world = case name mob of
+    "tokage" | null enemies            -> normal mob
+             | snd (head enemies) == 1 -> attack $ head enemies
+             | snd (head enemies) > 1  -> forward $ head enemies
+        where enemies = filter (isEnemy mob) (search world mob 5)
 
-search :: World -> Mob -> Int -> [Mob]
-search world searcher searchLength = filter
-    (\mob -> if M.lookup (coord mob) m == Nothing then False else True)
-    (map snd (M.toList $ mobs world))
 
+
+
+
+
+search :: World -> Mob -> Int -> [MobDistance]
+search world searcher searchLength = map
+    ((\mob -> (mob, M.lookup (coord mob) m)) . snd)
+    (M.toList $ mobs world)
   where
     m = dijkstraBFS searchLength
                     (coord searcher)
